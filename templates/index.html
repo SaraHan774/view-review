@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ config.APP_TITLE }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📋 {{ config.APP_TITLE }}</h1>
+      <div class="summary">
+        {{ owner }}/{{ name }} 저장소의 PR 목록
+        {% if prs %}
+          <span class="comment-count">{{ prs|length }} PR</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="filters">
+      <form method="get" action="/">
+        <div class="filter-group">
+          <label for="state">PR 상태:</label>
+          <select name="state" id="state">
+            <option value="all" {% if state == 'all' %}selected{% endif %}>전체</option>
+            <option value="open" {% if state == 'open' %}selected{% endif %}>열림</option>
+            <option value="closed" {% if state == 'closed' %}selected{% endif %}>닫힘</option>
+            <option value="merged" {% if state == 'merged' %}selected{% endif %}>병합됨</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>
+            <input type="checkbox" id="include_resolved" value="true">
+            해결된 코멘트 포함
+          </label>
+        </div>
+
+        <button type="submit" class="filter-button">필터 적용</button>
+      </form>
+    </div>
+
+    <main>
+      {% if prs %}
+        {% for pr in prs %}
+          <a href="/pr/{{ pr.number }}" class="pr-link">
+            <div class="pr" data-pr-number="{{ pr.number }}">
+              <div class="pr-header">
+                <div class="pr-title">
+                  <span class="pr-number">#{{ pr.number }}</span>
+                  <span class="pr-title-text">{{ pr.title }}</span>
+                  <span class="pr-state pr-state-{{ pr.state|lower }}">{{ pr.state }}</span>
+                  <a href="{{ pr.url }}" target="_blank" rel="noopener noreferrer" 
+                     class="github-link" onclick="event.stopPropagation()">
+                    🔗
+                  </a>
+                </div>
+                <div class="pr-date">{{ pr.createdAt[:10] }}</div>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="no-comments">
+          <div class="no-comments-icon">✅</div>
+          <p>PR이 없습니다.</p>
+          <p class="hint">필터를 변경해보세요.</p>
+        </div>
+      {% endif %}
+    </main>
+
+    <footer>
+      <p>Powered by GitHub CLI & GraphQL API</p>
+    </footer>
+  </div>
+</body>
+</html>

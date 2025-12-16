@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ error_title }} - {{ config.APP_TITLE }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .error-container {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 2rem;
+    }
+    .error-card {
+      background: #fff;
+      border: 1px solid #d73a49;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(215, 58, 73, 0.1);
+    }
+    .error-icon {
+      font-size: 4rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .error-title {
+      color: #d73a49;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .error-message {
+      color: #586069;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .error-help {
+      background: #f6f8fa;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    .error-help h3 {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      color: #24292f;
+    }
+    .error-help ol {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+    .error-help li {
+      margin: 0.5rem 0;
+      color: #586069;
+    }
+    .error-help code {
+      background: #fff;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    .back-button {
+      display: block;
+      width: fit-content;
+      margin: 2rem auto 0 auto;
+      padding: 0.75rem 1.5rem;
+      background: #0969da;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .back-button:hover {
+      background: #0860ca;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <h1 class="error-title">{{ error_title }}</h1>
+      <p class="error-message">{{ error_message }}</p>
+
+      <div class="error-help">
+        <h3>💡 해결 방법</h3>
+        <ol>
+          <li><strong>GitHub CLI 인증 확인:</strong>
+            <br><code>gh auth status</code>
+            <br>인증이 안 되어 있다면: <code>gh auth login</code>
+          </li>
+          <li><strong>Git 저장소에서 실행:</strong>
+            <br>코드 리뷰를 확인하고 싶은 Git 저장소의 루트 디렉터리로 이동한 후 앱을 다시 실행하세요.
+            <br><code>cd /path/to/your/repo</code>
+            <br><code>python /Users/trinity/ViewReview/app.py</code>
+          </li>
+          <li><strong>원격 저장소 확인:</strong>
+            <br>현재 저장소가 GitHub와 연결되어 있는지 확인하세요.
+            <br><code>git remote -v</code>
+          </li>
+        </ol>
+      </div>
+
+      <a href="javascript:location.reload();" class="back-button">🔄 다시 시도</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PR #{{ pr.number }} - {{ config.APP_TITLE }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="breadcrumb">
+        <a href="/">← PR 목록으로</a>
+      </div>
+      <h1>📋 PR #{{ pr.number }}</h1>
+      <div class="summary">
+        <a href="{{ pr.url }}" target="_blank" rel="noopener noreferrer" class="pr-title-link">
+          {{ pr.title }}
+        </a>
+      </div>
+      <div class="pr-meta-info">
+        {{ owner }}/{{ name }}
+      </div>
+    </header>
+
+    <div class="filters">
+      <form method="get" action="/pr/{{ pr.number }}" id="filterForm">
+        <div class="filter-group">
+          <label>
+            <input type="checkbox" name="include_resolved" value="true" 
+                   {% if include_resolved %}checked{% endif %}
+                   onchange="this.form.submit()">
+            해결된 코멘트 포함
+          </label>
+        </div>
+        <div class="filter-group">
+          <label>
+            <input type="checkbox" name="compact_mode" value="true" 
+                   {% if compact_mode %}checked{% endif %}
+                   onchange="this.form.submit()">
+            컴팩트 모드
+          </label>
+        </div>
+      </form>
+    </div>
+
+    <main class="pr-detail-layout">
+      <!-- 왼쪽: 리뷰 코멘트 -->
+      <div class="pr-detail-main">
+        {% if pr.comments %}
+          <div class="comments-container">
+            <div class="comments-header">
+              <h2>리뷰 코멘트</h2>
+              <span class="comment-count">{{ pr.comments|length }}개</span>
+            </div>
+
+            {% for c in pr.comments %}
+            {% if compact_mode %}
+              <!-- 컴팩트 모드 -->
+              <div class="review-card compact {% if c.isResolved %}resolved{% endif %}">
+                <div class="compact-review">
+                  <div class="compact-header">
+                    <div class="compact-header-row">
+                      <span class="compact-author">
+                        {% if c.authorUrl %}
+                          <a href="{{ c.authorUrl }}" target="_blank" rel="noopener noreferrer">
+                            {{ c.author }}
+                          </a>
+                        {% else %}
+                          {{ c.author }}
+                        {% endif %}
+                      </span>
+                      <span class="compact-time">{{ c.createdAt|format_time }}</span>
+                    </div>
+                    {% if c.path %}
+                      <div class="compact-file-info">
+                        <div class="compact-file-row">
+                          <span class="file-icon">📄</span>
+                          <code class="compact-path">{{ c.path }}</code>
+                        </div>
+                        {% if c.lineInfo %}
+                          <span class="compact-line">{{ c.lineInfo }}</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="compact-body">
+                    {{ c.bodyHTML_safe }}
+                  </div>
+                  {% if c.url %}
+                    <div class="compact-actions">
+                      <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer" class="compact-link">
+                        GitHub에서 보기 →
+                      </a>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <!-- 상세 모드 -->
+            <div class="review-card {% if c.isResolved %}resolved{% endif %}">
+              <!-- 카드 헤더 -->
+              <div class="card-header">
+                <div class="author-info">
+                  {% if c.avatarUrl %}
+                    <img src="{{ c.avatarUrl }}" alt="{{ c.author }}" class="avatar">
+                  {% else %}
+                    <div class="avatar-placeholder">{{ c.author[0]|upper }}</div>
+                  {% endif %}
+                  <div class="author-details">
+                    <div class="author-name">
+                      {% if c.authorUrl %}
+                        <a href="{{ c.authorUrl }}" target="_blank" rel="noopener noreferrer">
+                          {{ c.author }}
+                        </a>
+                      {% else %}
+                        {{ c.author }}
+                      {% endif %}
+                      {% if c.isResolved %}
+                        <span class="resolved-badge">✓ 해결됨</span>
+                      {% endif %}
+                    </div>
+                    <div class="comment-meta">
+                      <span class="comment-time">{{ c.createdAt|format_time }}</span>
+                      {% if c.url %}
+                        <span class="separator">•</span>
+                        <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer" class="github-link-small">
+                          GitHub에서 보기
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 파일 정보 -->
+              {% if c.path %}
+                <div class="file-info">
+                  <span class="file-icon">📄</span>
+                  <span class="file-path">{{ c.path }}</span>
+                  {% if c.lineInfo %}
+                    <span class="line-info">{{ c.lineInfo }}</span>
+                  {% endif %}
+                </div>
+              {% endif %}
+
+              <!-- Diff Hunk -->
+              {% if c.diffHunk %}
+                <div class="diff-container">
+                  <pre class="diff"><code>{{ c.diffHunk }}</code></pre>
+                </div>
+              {% endif %}
+
+              <!-- 리뷰 내용 -->
+              <div class="review-body">
+                {{ c.bodyHTML_safe }}
+              </div>
+
+              <!-- 댓글 섹션 -->
+              {% if c.replies %}
+                <div class="replies-section">
+                  <div class="replies-header">
+                    <span class="replies-count">💬 {{ c.replies|length }}개의 댓글</span>
+                  </div>
+                  {% for reply in c.replies %}
+                    <div class="reply-item">
+                      <div class="reply-header">
+                        {% if reply.avatarUrl %}
+                          <img src="{{ reply.avatarUrl }}" alt="{{ reply.author }}" class="reply-avatar">
+                        {% else %}
+                          <div class="reply-avatar-placeholder">{{ reply.author[0]|upper }}</div>
+                        {% endif %}
+                        <div class="reply-author">
+                          {% if reply.authorUrl %}
+                            <a href="{{ reply.authorUrl }}" target="_blank" rel="noopener noreferrer">
+                              {{ reply.author }}
+                            </a>
+                          {% else %}
+                            {{ reply.author }}
+                          {% endif %}
+                        </div>
+                        <span class="reply-time">{{ reply.createdAt|format_time }}</span>
+                      </div>
+                      <div class="reply-body">
+                        {{ reply.bodyHTML|safe }}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <!-- 답글 작성 폼 -->
+              <div class="reply-form-section">
+                <form class="reply-form" data-comment-id="{{ c.databaseId }}" data-pr-number="{{ pr.number }}">
+                  <textarea 
+                    name="body" 
+                    class="reply-input" 
+                    placeholder="답글을 작성하세요..." 
+                    rows="3"
+                    required
+                  ></textarea>
+                  <div class="reply-form-actions">
+                    <button type="submit" class="reply-submit-btn">답글 작성</button>
+                    <span class="reply-status"></span>
+                  </div>
+                </form>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="no-comments">
+          <div class="no-comments-icon">✅</div>
+          <p>
+            {% if include_resolved %}
+              이 PR에는 리뷰 코멘트가 없습니다.
+            {% else %}
+              이 PR에는 미해결 리뷰 코멘트가 없습니다.
+            {% endif %}
+          </p>
+          {% if not include_resolved %}
+            <p class="hint">
+              <a href="?include_resolved=true">해결된 코멘트 포함하기</a>
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
+      </div>
+
+      <!-- 오른쪽: 커밋 목록 -->
+      <aside class="pr-detail-sidebar">
+        <div class="commits-container">
+          <div class="commits-header">
+            <h3>📦 커밋 목록</h3>
+            <span class="commits-count">{{ pr.commits|length }}개</span>
+          </div>
+          
+          {% if pr.commits %}
+            <div class="commits-list">
+              {% for commit in pr.commits %}
+                <div class="commit-item">
+                  <div class="commit-header">
+                    <div class="commit-info">
+                      <div class="commit-message">
+                        <a href="{{ commit.url }}" target="_blank" rel="noopener noreferrer" title="{{ commit.message }}">
+                          {{ commit.messageHeadline }}
+                        </a>
+                      </div>
+                      <div class="commit-meta">
+                        <span class="commit-sha">
+                          <code>{{ commit.abbreviatedOid }}</code>
+                        </span>
+                        <span class="commit-author">
+                          {% if commit.authorLogin %}
+                            <a href="{{ commit.authorUrl }}" target="_blank" rel="noopener noreferrer">
+                              {{ commit.authorLogin }}
+                            </a>
+                          {% else %}
+                            {{ commit.authorName }}
+                          {% endif %}
+                        </span>
+                        <span class="commit-time">{{ commit.committedDate|format_time }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="no-commits">
+              <p>커밋이 없습니다.</p>
+            </div>
+          {% endif %}
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <p>Powered by GitHub CLI & GraphQL API</p>
+    </footer>
+  </div>
+
+  <script>
+    // Diff 포매팅
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.diff code').forEach(function(codeBlock) {
+        const html = codeBlock.innerHTML;
+        const lines = html.split('\n');
+        
+        const formatted = lines.map(line => {
+          const decoded = line.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          
+          if (decoded.startsWith('@@')) {
+            return '<span class="diff-hunk-header">' + line + '</span>';
+          } else if (decoded.startsWith('+') && !decoded.startsWith('+++')) {
+            return '<span class="diff-addition">' + line + '</span>';
+          } else if (decoded.startsWith('-') && !decoded.startsWith('---')) {
+            return '<span class="diff-deletion">' + line + '</span>';
+          } else if (decoded.startsWith('+++') || decoded.startsWith('---')) {
+            return '<span class="diff-file">' + line + '</span>';
+          } else if (decoded.startsWith('...')) {
+            return '<span class="diff-omitted">' + line + '</span>';
+          } else {
+            return '<span class="diff-context">' + line + '</span>';
+          }
+        }).join('\n');
+        
+        codeBlock.innerHTML = formatted;
+      });
+
+      // 답글 폼 제출 처리
+      document.querySelectorAll('.reply-form').forEach(function(form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const commentId = form.dataset.commentId;
+          const prNumber = form.dataset.prNumber;
+          const textarea = form.querySelector('textarea[name="body"]');
+          const submitBtn = form.querySelector('.reply-submit-btn');
+          const statusSpan = form.querySelector('.reply-status');
+          const body = textarea.value.trim();
+          
+          if (!body) {
+            return;
+          }
+          
+          // 버튼 비활성화 및 로딩 상태
+          submitBtn.disabled = true;
+          submitBtn.textContent = '전송 중...';
+          statusSpan.textContent = '';
+          
+          try {
+            const formData = new FormData();
+            formData.append('comment_id', commentId);
+            formData.append('body', body);
+            
+            const response = await fetch(`/pr/${prNumber}/reply`, {
+              method: 'POST',
+              body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              statusSpan.textContent = '✓ 답글이 작성되었습니다. 페이지를 새로고침합니다...';
+              statusSpan.style.color = '#1a7f37';
+              
+              // 2초 후 페이지 새로고침
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            } else {
+              throw new Error(result.error || '답글 작성 실패');
+            }
+          } catch (error) {
+            statusSpan.textContent = '✗ ' + error.message;
+            statusSpan.style.color = '#d73a49';
+            
+            // 버튼 복원
+            submitBtn.disabled = false;
+            submitBtn.textContent = '답글 작성';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

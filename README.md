@@ -2,6 +2,11 @@
 
 GitHub PR의 리뷰 코멘트를 한눈에 확인하는 웹 애플리케이션입니다.
 
+## Demo 
+
+![Image](images/chrome-capture-2025-12-17 (1).gif)
+![Image](images/chrome-capture-2025-12-17 (2).gif)
+
 ## 주요 기능
 
 내가 생성한 PR과 리뷰 코멘트를 조회하고 필터링할 수 있습니다.

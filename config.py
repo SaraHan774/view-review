@@ -25,6 +25,15 @@ class Config:
     DEFAULT_PR_STATE = "open"  # "open", "closed", "merged", "all"
     DEFAULT_INCLUDE_RESOLVED = False  # resolved 코멘트 포함 여부
     
+    # GitHub API 제한 설정
+    # GraphQL 쿼리에서 한 번에 가져올 수 있는 최대 개수
+    MAX_REVIEW_THREADS = int(os.environ.get("MAX_REVIEW_THREADS", "100"))  # PR당 최대 리뷰 스레드 개수
+    MAX_COMMENTS_PER_THREAD = int(os.environ.get("MAX_COMMENTS_PER_THREAD", "100"))  # 스레드당 최대 코멘트 개수
+    MAX_COMMITS = int(os.environ.get("MAX_COMMITS", "100"))  # PR당 최대 커밋 개수
+    
+    # PR 목록 제한 (gh CLI는 기본적으로 30개 제한, 더 많은 경우 --limit 옵션 사용)
+    MAX_PR_LIST_LIMIT = int(os.environ.get("MAX_PR_LIST_LIMIT", "100"))  # PR 목록 최대 개수
+    
     # UI 설정
     APP_TITLE = "코드 리뷰 체커"
     COMMENTS_PER_PAGE = 50  # 페이지네이션 (향후 구현)

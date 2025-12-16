@@ -22,7 +22,7 @@ pre.diff {
   border-radius: 6px;
   overflow-x: auto;
   font-size: 0.85rem;
-  line-height: 1.5;
+  line-height: 1.2; /* 라인 간격 줄임 (기존 1.5에서 1.2로) */
   margin-bottom: 0.75rem;
   font-family: 'Monaco', 'Courier New', monospace;
   border: 1px solid #d0d7de;
@@ -30,6 +30,7 @@ pre.diff {
 
 pre.diff code {
   white-space: pre;
+  display: block; /* 블록 요소로 처리하여 라인 간격 제어 */
 }
 
 /* Diff 색상 */
@@ -42,23 +43,31 @@ pre.diff code {
   background: #d1f0d1;
   color: #0f5323;
   display: block;
+  margin: 0; /* 마진 제거 */
+  padding: 0; /* 패딩 제거 */
 }
 
 .diff-deletion {
   background: #ffd7d5;
   color: #82071e;
   display: block;
+  margin: 0; /* 마진 제거 */
+  padding: 0; /* 패딩 제거 */
 }
 
 .diff-context {
   color: #656d76;
   display: block;
+  margin: 0; /* 마진 제거 */
+  padding: 0; /* 패딩 제거 */
 }
 
 .diff-file {
   color: #656d76;
   font-weight: 600;
   display: block;
+  margin: 0; /* 마진 제거 */
+  padding: 0; /* 패딩 제거 */
 }
 
 /* Diff 생략 표시 */

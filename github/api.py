@@ -4,6 +4,7 @@ import json
 import subprocess
 from typing import List, Dict, Any, Optional
 from operator import itemgetter
+from flask import current_app
 
 from app.exceptions import GitHubAPIError
 
@@ -62,12 +63,27 @@ class GitHubAPI:
         Returns:
             PR 정보 리스트 (number, title, url, state, createdAt)
         """
-        output = self.run_gh([
+        # 설정에서 PR 목록 제한 가져오기
+        pr_limit = 100
+        try:
+            if current_app:
+                pr_limit = current_app.config.get("MAX_PR_LIST_LIMIT", 100)
+        except RuntimeError:
+            pass
+        
+        # gh CLI는 --limit 옵션으로 제한 가능 (기본값 30)
+        args = [
             "pr", "list",
             "--author", "@me",
             "--state", state,
             "--json", "number,title,url,state,createdAt",
-        ])
+        ]
+        
+        # 제한값이 기본값(30)보다 크면 --limit 옵션 추가
+        if pr_limit > 30:
+            args.extend(["--limit", str(pr_limit)])
+        
+        output = self.run_gh(args)
         if not output:
             return []
         
@@ -132,11 +148,26 @@ class GitHubAPI:
         else:
             pr_state = state
         
-        output = self.run_gh([
+        # 설정에서 PR 목록 제한 가져오기
+        pr_limit = 100
+        try:
+            if current_app:
+                pr_limit = current_app.config.get("MAX_PR_LIST_LIMIT", 100)
+        except RuntimeError:
+            pass
+        
+        # gh CLI는 --limit 옵션으로 제한 가능 (기본값 30)
+        args = [
             "pr", "list",
             "--state", pr_state,
             "--json", "number,title,url,state,createdAt,headRefName",
-        ])
+        ]
+        
+        # 제한값이 기본값(30)보다 크면 --limit 옵션 추가
+        if pr_limit > 30:
+            args.extend(["--limit", str(pr_limit)])
+        
+        output = self.run_gh(args)
         
         if not output:
             return []
@@ -158,24 +189,35 @@ class GitHubAPI:
             pr_number = pr["number"]
             
             # GraphQL로 해당 PR의 리뷰 코멘트 조회
-            query = r"""
-              query($owner: String!, $name: String!, $number: Int!) {
-                repository(owner: $owner, name: $name) {
-                  pullRequest(number: $number) {
-                    reviewThreads(first: 100) {
-                      nodes {
-                        comments(first: 100) {
-                          nodes {
-                            author {
+            # 설정에서 제한값 가져오기 (없으면 기본값 100 사용)
+            max_threads = 100
+            max_comments = 100
+            try:
+                if current_app:
+                    max_threads = current_app.config.get("MAX_REVIEW_THREADS", 100)
+                    max_comments = current_app.config.get("MAX_COMMENTS_PER_THREAD", 100)
+            except RuntimeError:
+                # 애플리케이션 컨텍스트 외부에서는 기본값 사용
+                pass
+            
+            query = f"""
+              query($owner: String!, $name: String!, $number: Int!) {{
+                repository(owner: $owner, name: $name) {{
+                  pullRequest(number: $number) {{
+                    reviewThreads(first: {max_threads}) {{
+                      nodes {{
+                        comments(first: {max_comments}) {{
+                          nodes {{
+                            author {{
                               login
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+                            }}
+                          }}
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+              }}
             """
             
             try:
@@ -253,23 +295,36 @@ class GitHubAPI:
             }
         """
 
-        query = r"""
-          query($owner: String!, $name: String!, $number: Int!) {
-            repository(owner: $owner, name: $name) {
-              pullRequest(number: $number) {
+        # 설정에서 제한값 가져오기 (없으면 기본값 100 사용)
+        max_threads = 100
+        max_comments = 100
+        max_commits = 100
+        try:
+            if current_app:
+                max_threads = current_app.config.get("MAX_REVIEW_THREADS", 100)
+                max_comments = current_app.config.get("MAX_COMMENTS_PER_THREAD", 100)
+                max_commits = current_app.config.get("MAX_COMMITS", 100)
+        except RuntimeError:
+            # 애플리케이션 컨텍스트 외부에서는 기본값 사용
+            pass
+        
+        query = f"""
+          query($owner: String!, $name: String!, $number: Int!) {{
+            repository(owner: $owner, name: $name) {{
+              pullRequest(number: $number) {{
                 number
                 title
                 url
                 state
                 createdAt
-                author {
+                author {{
                   login
-                }
-                reviewThreads(first: 100) {
-                  nodes {
+                }}
+                reviewThreads(first: {max_threads}) {{
+                  nodes {{
                     isResolved
-                    comments(first: 100) {
-                      nodes {
+                    comments(first: {max_comments}) {{
+                      nodes {{
                         id
                         databaseId
                         url
@@ -277,36 +332,36 @@ class GitHubAPI:
                         diffHunk
                         bodyHTML
                         createdAt
-                        author {
+                        author {{
                           login
                           url
                           avatarUrl
-                        }
-                      }
-                    }
-                  }
-                }
-                commits(first: 100) {
-                  nodes {
-                    commit {
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+                commits(first: {max_commits}) {{
+                  nodes {{
+                    commit {{
                       abbreviatedOid
                       messageHeadline
                       committedDate
-                      author {
+                      author {{
                         name
-                        user {
+                        user {{
                           login
                           url
                           avatarUrl
-                        }
-                      }
+                        }}
+                      }}
                       url
-                    }
-                  }
-                }
-              }
-            }
-          }
+                    }}
+                  }}
+                }}
+              }}
+            }}
+          }}
         """
 
         raw = self.run_gh([

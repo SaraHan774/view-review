@@ -413,23 +413,27 @@
         const html = codeBlock.innerHTML;
         const lines = html.split('\n');
         
-        const formatted = lines.map(line => {
-          const decoded = line.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-          
-          if (decoded.startsWith('@@')) {
-            return '<span class="diff-hunk-header">' + line + '</span>';
-          } else if (decoded.startsWith('+') && !decoded.startsWith('+++')) {
-            return '<span class="diff-addition">' + line + '</span>';
-          } else if (decoded.startsWith('-') && !decoded.startsWith('---')) {
-            return '<span class="diff-deletion">' + line + '</span>';
-          } else if (decoded.startsWith('+++') || decoded.startsWith('---')) {
-            return '<span class="diff-file">' + line + '</span>';
-          } else if (decoded.startsWith('...')) {
-            return '<span class="diff-omitted">' + line + '</span>';
-          } else {
-            return '<span class="diff-context">' + line + '</span>';
-          }
-        }).join('\n');
+        // 빈 줄을 제거하고 각 라인을 포매팅
+        const formatted = lines
+          .filter(line => line.trim() !== '') // 빈 줄 제거
+          .map(line => {
+            const decoded = line.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+            
+            if (decoded.startsWith('@@')) {
+              return '<span class="diff-hunk-header">' + line + '</span>';
+            } else if (decoded.startsWith('+') && !decoded.startsWith('+++')) {
+              return '<span class="diff-addition">' + line + '</span>';
+            } else if (decoded.startsWith('-') && !decoded.startsWith('---')) {
+              return '<span class="diff-deletion">' + line + '</span>';
+            } else if (decoded.startsWith('+++') || decoded.startsWith('---')) {
+              return '<span class="diff-file">' + line + '</span>';
+            } else if (decoded.startsWith('...')) {
+              return '<span class="diff-omitted">' + line + '</span>';
+            } else {
+              return '<span class="diff-context">' + line + '</span>';
+            }
+          })
+          .join(''); // 빈 줄 없이 바로 연결
         
         codeBlock.innerHTML = formatted;
       });
